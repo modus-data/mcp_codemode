@@ -10,6 +10,13 @@ import {
   getToolsInCategory,
   getToolByPath
 } from './mcp_providers/index.js';
+import {
+  IRunEnvironment,
+  ExecutionResult,
+  ExecutionOptions,
+  LocalRunEnvironment,
+  E2BRunEnvironment
+} from './run_environments/index.js';
 
 async function main() {
   // Example: Using OpenRouter client
@@ -181,6 +188,29 @@ async function main() {
 
 main().catch(console.error);
 
+// Re-export all modules for library usage
+export {
+  // Model Clients
+  ILLMClient,
+  OpenRouterClient,
+  OpenAIClient,
+  // MCP Providers
+  IMCPProvider,
+  PipedreamProvider,
+  ComposioProvider,
+  ComposioConfig,
+  ToolFilterOptions,
+  listAllToolPaths,
+  getCatalogStructure,
+  getToolsInCategory,
+  getToolByPath,
+  // Run Environments
+  IRunEnvironment,
+  ExecutionResult,
+  ExecutionOptions,
+  LocalRunEnvironment,
+  E2BRunEnvironment,
+};
 
 // const codeModeMCPRunner = initCodeModeMCP({
 //     llmCallers: {
