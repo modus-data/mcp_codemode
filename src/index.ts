@@ -7,7 +7,8 @@ import {
   ToolFilterOptions,
   listAllToolPaths,
   getCatalogStructure,
-  getToolsInCategory
+  getToolsInCategory,
+  getToolByPath
 } from './mcp_providers/index.js';
 
 async function main() {
@@ -49,13 +50,59 @@ async function main() {
   console.log(`\nSlack message tools: ${Object.keys(slackTools).join(', ')}`);
   */
   console.log('\n=== Composio Provider Example ===');
+  
+  // First, let's check what connected accounts you have
   const composioConfig: ComposioConfig = {
     // API credentials will be read from environment if not provided
     // apiKey: 'your-api-key',
-    // projectId: 'your-project-id',
+    projectId: 'pr_VkAXHNA8WZkP', // From your screenshot
     // userId: 'your-user-id',
-    // connectedAccountId: 'your-connected-account-id' // needed for execution
+    // connectedAccountId will be set after we find available accounts
   };
+  
+  console.log('\n=== Checking Connected Accounts ===');
+  try {
+    const axios = (await import('axios')).default;
+    // Try the correct v3 API endpoint for connected accounts
+    const response = await axios.get('https://backend.composio.dev/api/v3/connected_accounts', {
+      headers: {
+        'X-API-Key': process.env.COMPOSIO_API_KEY || '',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log('\nYour connected accounts:');
+    if (response.data && response.data.items && response.data.items.length > 0) {
+      response.data.items.forEach((account: any, index: number) => {
+        const appName = account.toolkit?.slug || account.appName || account.integrationId || 'Unknown';
+        console.log(`${index + 1}. ${appName.toUpperCase()} (ID: ${account.id})`);
+        console.log(`   Status: ${account.status}`);
+      });
+      
+      // Use the first Slack account if available
+      const slackAccount = response.data.items.find((acc: any) => {
+        const appIdentifier = (acc.toolkit?.slug || acc.appName || acc.integrationId || '').toLowerCase();
+        return appIdentifier === 'slack' || appIdentifier.includes('slack');
+      });
+      
+      if (slackAccount) {
+        console.log(`\n✓ Using Slack account: ${slackAccount.id}`);
+        console.log(`  User ID: ${slackAccount.user_id}`);
+        composioConfig.connectedAccountId = slackAccount.id;
+        composioConfig.userId = slackAccount.user_id;
+      } else {
+        console.log('\n⚠ No Slack account found. You need to connect Slack first.');
+        console.log('Visit: https://app.composio.dev/apps/slack');
+      }
+    } else {
+      console.log('No connected accounts found. You need to connect Slack first.');
+      console.log('Visit: https://app.composio.dev/apps/slack');
+    }
+  } catch (error: any) {
+    console.error('Error fetching connected accounts:', error.response?.data || error.message);
+    console.log('\nMake sure COMPOSIO_API_KEY is set in your .env file');
+  }
+  
   const composioProvider: IMCPProvider = new ComposioProvider(composioConfig);
   
   // Filter by specific toolkits
@@ -74,17 +121,61 @@ async function main() {
   console.log(`\nTotal Composio tools: ${composioPaths.length}`);
   console.log('Sample tool paths:', composioPaths.slice(0, 5));
   
-  // Get a specific tool by path
-  const composioTool = await composioProvider.getTool('slack.message.send');
-  if (composioTool) {
-    console.log(`\nFound tool: ${composioTool.name}`);
-    console.log(`Description: ${composioTool.description}`);
+  // Get the tool to list all Slack channels from the catalog we just fetched
+  const listChannelsTool = getToolByPath(composioCatalog, 'slack.list.all_channels');
+  if (listChannelsTool) {
+    console.log(`\nFound tool: ${listChannelsTool.name}`);
+    console.log(`Description: ${listChannelsTool.description}`);
+    console.log('\nTool parameters:');
+    listChannelsTool.parameters.forEach((param: any) => {
+      console.log(`  - ${param.name} (${param.type}): ${param.description}`);
+      console.log(`    Required: ${param.required}, Default: ${param.default}`);
+    });
     
-    // Execute the tool (requires connectedAccountId in constructor)
-    // const result = await composioTool.execute({ 
-    //   channel: '#general', 
-    //   text: 'Hello from MCP!' 
-    // });
+    // Only execute if we have a connected account
+    if (composioConfig.connectedAccountId) {
+      console.log('\n=== Executing: List Slack Channels ===');
+      try {
+        // Pass limit parameter to get more channels (max is 1000)
+        const result = await listChannelsTool.execute({ 
+          limit: 100,  // Get up to 100 channels per page
+          exclude_archived: false  // Include archived channels
+        });
+        
+        console.log('\n=== Slack Channels ===');
+        
+        // Extract channels from the Composio response structure
+        const channels = result?.data?.channels || result?.channels;
+        const nextCursor = result?.data?.response_metadata?.next_cursor;
+        
+        if (channels && Array.isArray(channels)) {
+          channels.forEach((channel: any) => {
+            const privacy = channel.is_private ? ' [Private]' : ' [Public]';
+            const archived = channel.is_archived ? ' [Archived]' : '';
+            const members = channel.num_members ? ` (${channel.num_members} members)` : '';
+            console.log(`- #${channel.name} (ID: ${channel.id})${privacy}${archived}${members}`);
+          });
+          console.log(`\nTotal channels: ${channels.length}`);
+          
+          if (nextCursor) {
+            console.log('\n💡 More channels available. There\'s a next_cursor for pagination.');
+          }
+        } else {
+          console.log('Unexpected response structure:', JSON.stringify(result, null, 2));
+        }
+      } catch (error) {
+        console.error('Error executing tool:', error);
+      }
+    } else {
+      console.log('\n⚠ Skipping execution: No connected Slack account found.');
+      console.log('To execute tools, you need to:');
+      console.log('1. Go to https://app.composio.dev/apps');
+      console.log('2. Connect your Slack workspace');
+      console.log('3. The connected account ID will be automatically used');
+    }
+  } else {
+    console.log('\nCould not find slack.list.all_channels tool. Available paths:');
+    console.log(composioPaths.filter(p => p.includes('slack.list')).slice(0, 10));
   }
 }
 

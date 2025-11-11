@@ -124,12 +124,21 @@ export class ComposioProvider implements IMCPProvider {
     }
 
     try {
+      // Correct v3 execute endpoint structure
+      const executeUrl = `${this.baseUrl}/tools/execute/${actionName}`;
+      const requestBody: any = {
+        connected_account_id: this.connectedAccountId,
+        arguments: input,
+      };
+      
+      // Add user_id if available (required for multi-user connected accounts)
+      if (this.userId) {
+        requestBody.user_id = this.userId;
+      }
+      
       const response = await axios.post(
-        `${this.baseUrl}/tools/${actionName}/execute`,
-        {
-          connectedAccountId: this.connectedAccountId,
-          input,
-        } as ComposioExecutionRequest,
+        executeUrl,
+        requestBody,
         {
           headers: this.getHeaders(),
         }
@@ -138,7 +147,8 @@ export class ComposioProvider implements IMCPProvider {
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        throw new Error(`Composio API error: ${error.response?.status} - ${error.response?.data?.message || error.response?.statusText || error.message}`);
+        const errorMessage = error.response?.data?.error?.message || error.response?.data?.message || error.response?.statusText || error.message;
+        throw new Error(`Composio API error: ${error.response?.status} - ${errorMessage}`);
       }
       throw error;
     }
