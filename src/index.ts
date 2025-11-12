@@ -1,5 +1,5 @@
 import { OpenRouterClient, ILLMClient } from './model_clients';
-import { CodeModeMCP, CodeModeMCPConfig, MCPExecutionResult } from './CodeModeMCP';
+import { CodeModeMCP, CodeModeMCPConfig, MCPExecutionResult, StepTiming } from './CodeModeMCP';
 import { ComposioProvider } from './mcp_providers/composio';
 import { LocalRunEnvironment } from './run_environments';
 

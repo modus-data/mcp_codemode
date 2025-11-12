@@ -85,6 +85,31 @@ export interface RunMCPCodeOptions {
 }
 
 /**
+ * Timing information for a step
+ */
+export interface StepTiming {
+  /**
+   * Name of the step
+   */
+  stepName: string;
+  
+  /**
+   * Duration in milliseconds
+   */
+  durationMs: number;
+  
+  /**
+   * Start timestamp
+   */
+  startTime: number;
+  
+  /**
+   * End timestamp
+   */
+  endTime: number;
+}
+
+/**
  * Result of MCP code execution
  */
 export interface MCPExecutionResult {
@@ -92,6 +117,16 @@ export interface MCPExecutionResult {
    * The result type indicating the outcome of the execution
    */
   resultType: 'success' | 'partial' | 'failure';
+  
+  /**
+   * Timing information for each step
+   */
+  timings: StepTiming[];
+  
+  /**
+   * Total execution time in milliseconds
+   */
+  totalDurationMs: number;
 }
 
 /**
@@ -134,6 +169,9 @@ export class CodeModeMCP {
       maxConcurrentThreads = 8
     } = options;
 
+    const overallStartTime = Date.now();
+    const timings: StepTiming[] = [];
+
     console.log('Starting MCP code execution with options:', {
       maxToolCalls,
       totalExecutionTimeout,
@@ -144,13 +182,22 @@ export class CodeModeMCP {
     });
 
     // Step 1: Generate pseudocode using strategyLLM
+    let startTime = Date.now();
     const pseudocodeResult = await generatePseudocode({
       query: query || '',
       catalog: this.tools,
       llmFunction: this.strategyLLM
     });
+    let endTime = Date.now();
+    timings.push({
+      stepName: 'Generate Pseudocode (strategyLLM)',
+      durationMs: endTime - startTime,
+      startTime,
+      endTime
+    });
 
     // Step 2: Filter tools using tinyLLM with pseudocode guidance
+    startTime = Date.now();
     const filterResult = await filterToolsForQuery({
       query: query || '',
       catalog: this.tools,
@@ -159,8 +206,16 @@ export class CodeModeMCP {
       maxToolsPerPrompt,
       maxConcurrentThreads
     });
+    endTime = Date.now();
+    timings.push({
+      stepName: 'Filter Tools (tinyLLM)',
+      durationMs: endTime - startTime,
+      startTime,
+      endTime
+    });
 
     // Step 3: Generate TypeScript interfaces (in memory, no file I/O)
+    startTime = Date.now();
     let interfacesCode = '';
     if (this.runEnvironment) {
       const generateResult = await generateToolsCode({
@@ -177,13 +232,39 @@ export class CodeModeMCP {
       console.log(`\n⚠️  Skipping code generation - no run environment configured`);
       throw new Error('Run environment is required for code generation');
     }
+    endTime = Date.now();
+    timings.push({
+      stepName: 'Generate TypeScript Interfaces',
+      durationMs: endTime - startTime,
+      startTime,
+      endTime
+    });
 
     // Step 4: Use mainLLM to generate implementation based on pseudocode and interfaces
+    startTime = Date.now();
     const implementResult = await implementCode({
       query: query || '',
       pseudocode: pseudocodeResult.pseudocode,
       interfacesCode,
       llmFunction: this.mainLLM
+    });
+    endTime = Date.now();
+    timings.push({
+      stepName: 'Implement Code (mainLLM)',
+      durationMs: endTime - startTime,
+      startTime,
+      endTime
+    });
+
+    // Step 5: Verify TypeScript compilation (already done in implementCode, but track separately)
+    startTime = Date.now();
+    // (Compilation is done inside implementCode, so this is essentially instant)
+    endTime = Date.now();
+    timings.push({
+      stepName: 'Verify TypeScript Compilation',
+      durationMs: implementResult.compilesSuccessfully ? endTime - startTime : 0,
+      startTime,
+      endTime
     });
 
     // Print the output
@@ -201,11 +282,56 @@ export class CodeModeMCP {
     }
     console.log(`${'='.repeat(80)}\n`);
 
-    // TODO: Step 5: Execute the code using runEnvironment
+    // Calculate total duration
+    const totalDurationMs = Date.now() - overallStartTime;
+
+    // Print timing report
+    this.printTimingReport(timings, totalDurationMs);
+
+    // TODO: Step 6: Execute the code using runEnvironment
     // For now, we just return success based on compilation
     return {
-      resultType: implementResult.compilesSuccessfully ? 'success' : 'failure'
+      resultType: implementResult.compilesSuccessfully ? 'success' : 'failure',
+      timings,
+      totalDurationMs
     };
+  }
+
+  /**
+   * Print a formatted timing report
+   */
+  private printTimingReport(timings: StepTiming[], totalDurationMs: number): void {
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`⏱️  TIMING REPORT`);
+    console.log(`${'='.repeat(80)}\n`);
+
+    // Find the longest step name for alignment
+    const maxNameLength = Math.max(...timings.map(t => t.stepName.length));
+
+    // Print each step
+    timings.forEach((timing, index) => {
+      const paddedName = timing.stepName.padEnd(maxNameLength);
+      const durationSec = (timing.durationMs / 1000).toFixed(2);
+      const percentage = ((timing.durationMs / totalDurationMs) * 100).toFixed(1);
+      const bar = this.createProgressBar(timing.durationMs, totalDurationMs, 30);
+      
+      console.log(`${index + 1}. ${paddedName}  ${durationSec}s  (${percentage}%)  ${bar}`);
+    });
+
+    console.log(`\n${'─'.repeat(80)}`);
+    const totalSec = (totalDurationMs / 1000).toFixed(2);
+    console.log(`   ${'TOTAL'.padEnd(maxNameLength)}  ${totalSec}s  (100.0%)\n`);
+    console.log(`${'='.repeat(80)}\n`);
+  }
+
+  /**
+   * Create a visual progress bar
+   */
+  private createProgressBar(value: number, max: number, width: number): string {
+    const percentage = value / max;
+    const filled = Math.round(percentage * width);
+    const empty = width - filled;
+    return '█'.repeat(filled) + '░'.repeat(empty);
   }
 
   /**

@@ -252,7 +252,13 @@ async function main() {
 main().catch(console.error);
 
 // CodeModeMCP
-export { CodeModeMCP, CodeModeMCPConfig, RunMCPCodeOptions } from './CodeModeMCP';
+export { 
+  CodeModeMCP, 
+  CodeModeMCPConfig, 
+  RunMCPCodeOptions,
+  MCPExecutionResult,
+  StepTiming
+} from './CodeModeMCP';
 
 // Re-export all modules for library usage
 export {
