@@ -14,3 +14,9 @@ export {
   FilterToolsResult
 } from './filterTools';
 
+export {
+  generateToolsCode,
+  GenerateToolsCodeOptions,
+  GenerateToolsCodeResult
+} from './generateToolsCode';
+

@@ -3,6 +3,12 @@ dist/
 *.log
 .DS_Store
 .env
+temp/
+tmp/
+
+# Test directories
+test-*/
+*-output/
 
 # Prevent compiled files in src
 src/**/*.js

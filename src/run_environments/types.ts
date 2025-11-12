@@ -72,5 +72,11 @@ export interface IRunEnvironment {
    * @returns Whether the environment is ready
    */
   isReady(): Promise<boolean>;
+
+  /**
+   * Gets the working directory of the environment
+   * @returns The working directory path
+   */
+  getWorkingDirectory(): string;
 }
 

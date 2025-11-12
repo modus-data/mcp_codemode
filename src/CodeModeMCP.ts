@@ -2,7 +2,7 @@ import { LLMFunction } from './model_clients/types';
 import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
-import { filterToolsForQuery } from './steps';
+import { filterToolsForQuery, generateToolsCode } from './steps';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -131,7 +131,7 @@ export class CodeModeMCP {
       toolCallTimeout,
       query,
       maxToolsPerPrompt = 20,
-      maxConcurrentThreads = 5
+      maxConcurrentThreads = 8
     } = options;
 
     console.log('Starting MCP code execution with options:', {
@@ -152,10 +152,26 @@ export class CodeModeMCP {
       maxConcurrentThreads
     });
 
+    // Step 2: Generate TypeScript code for filtered tools
+    if (this.runEnvironment) {
+      const generateResult = await generateToolsCode({
+        catalog: filterResult.filteredCatalog,
+        runEnvironment: this.runEnvironment,
+        baseDir: '.'  // Relative to the environment's working directory
+      });
+
+      console.log(`\n✅ Code generation complete:`);
+      console.log(`   Files generated: ${generateResult.filesGenerated}`);
+      console.log(`   Output directory: ${generateResult.outputDir}`);
+      console.log(`   Location: ${this.runEnvironment.getWorkingDirectory()}`);
+    } else {
+      console.log(`\n⚠️  Skipping code generation - no run environment configured`);
+    }
+
     // TODO: Continue with the rest of the execution loop
-    // 2. Use strategyLLM to plan the approach
-    // 3. Use mainLLM to generate code and orchestrate execution
-    // 4. Use runEnvironment to execute code safely
+    // 3. Use strategyLLM to plan the approach
+    // 4. Use mainLLM to generate code and orchestrate execution
+    // 5. Use runEnvironment to execute code safely
     
     throw new Error('runMCPCode not yet fully implemented');
   }

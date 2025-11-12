@@ -41,6 +41,10 @@ async function main() {
   };
   const catalog = await testComposioProvider.getTools(testFilterOptions);
   
+  // Initialize a local run environment for code generation
+  // Use current directory so files are created in the project
+  const runEnvironment: IRunEnvironment = new LocalRunEnvironment(process.cwd());
+  
   // Initialize CodeModeMCP
   const codeMode = new CodeModeMCP({
     llms: {
@@ -48,7 +52,8 @@ async function main() {
       mainLLM,
       strategyLLM
     },
-    tools: catalog
+    tools: catalog,
+    runEnvironment
   });
   
   // Test the tool filtering with a specific query
@@ -63,10 +68,11 @@ async function main() {
     });
   } catch (error: any) {
     // Expected to throw "not yet fully implemented" error
-    // But we should see the tool filtering output above
+    // But we should see the tool filtering and code generation output above
     if (error.message === 'runMCPCode not yet fully implemented') {
-      console.log(`\n✅ Tool filtering step completed successfully!`);
+      console.log(`\n✅ Tool filtering and code generation steps completed successfully!`);
       console.log(`   The tinyLLM successfully filtered the catalog to only relevant tools.`);
+      console.log(`   TypeScript tool files have been generated in the mcp_tools/ directory.`);
       console.log(`   (Note: Full execution flow not yet implemented - this is expected)\n`);
     } else {
       throw error;

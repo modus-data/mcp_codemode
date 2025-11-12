@@ -137,5 +137,13 @@ export class E2BRunEnvironment implements IRunEnvironment {
       }
     }
   }
+
+  /**
+   * Gets the working directory of the E2B environment
+   */
+  getWorkingDirectory(): string {
+    // E2B sandboxes typically use /home/user as the working directory
+    return '/home/user';
+  }
 }
 

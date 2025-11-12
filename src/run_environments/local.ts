@@ -73,9 +73,11 @@ export class LocalRunEnvironment implements IRunEnvironment {
       const config = this.getLanguageConfig(language);
       
       // Create working directory if not exists
+      await fs.mkdir(this.workDir, { recursive: true });
+      
+      // Create temp directory for scripts if not exists
       if (!this.tempDir) {
-        await fs.mkdir(this.workDir, { recursive: true });
-        this.tempDir = await fs.mkdtemp(path.join(this.workDir, 'session-'));
+        this.tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-script-'));
       }
 
       // Write code to temp file
@@ -87,10 +89,10 @@ export class LocalRunEnvironment implements IRunEnvironment {
         await fs.chmod(tempFile, 0o755);
       }
 
-      // Execute the code
+      // Execute the code in the working directory (not the temp dir)
       const command = config.command(tempFile);
       const execOptions = {
-        cwd: options?.cwd || this.tempDir,
+        cwd: options?.cwd || this.workDir,  // Use workDir as default cwd
         env: { ...process.env, ...options?.env },
         timeout: options?.timeout || 30000, // Default 30 seconds
       };
@@ -145,6 +147,13 @@ export class LocalRunEnvironment implements IRunEnvironment {
         console.error('Error cleaning up temp directory:', error);
       }
     }
+  }
+
+  /**
+   * Gets the working directory of the local environment
+   */
+  getWorkingDirectory(): string {
+    return this.workDir;
   }
 }
 
