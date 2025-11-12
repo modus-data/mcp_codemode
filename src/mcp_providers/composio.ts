@@ -1,6 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { IMCPProvider, MCPTool, ToolParameter, ToolCatalog, ToolFilterOptions } from './types.js';
+import { IMCPProvider, MCPTool, ToolParameter, ToolCatalog, ToolFilterOptions } from './types';
 
 // Load environment variables
 dotenv.config();

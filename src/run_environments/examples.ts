@@ -3,7 +3,7 @@
  * This file demonstrates how to use the LocalRunEnvironment and E2BRunEnvironment
  */
 
-import { LocalRunEnvironment, E2BRunEnvironment } from './index.js';
+import { LocalRunEnvironment, E2BRunEnvironment } from '.';
 
 /**
  * Example: Using LocalRunEnvironment

@@ -1,7 +1,7 @@
-import { LLMFunction } from './model_clients/types.js';
-import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types.js';
-import { IRunEnvironment } from './run_environments/types.js';
-import { getToolByPath, listAllToolPaths } from './mcp_providers/utils.js';
+import { LLMFunction } from './model_clients/types';
+import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
+import { IRunEnvironment } from './run_environments/types';
+import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
 
 /**
  * Configuration for the CodeModeMCP class

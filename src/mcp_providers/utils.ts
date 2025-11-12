@@ -1,4 +1,4 @@
-import { ToolCatalog, MCPTool } from './types.js';
+import { ToolCatalog, MCPTool } from './types';
 
 /**
  * Helper utility functions for working with MCP tool catalogs

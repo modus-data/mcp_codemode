@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { ILLMClient, LLMFunction } from './types.js';
+import { ILLMClient, LLMFunction } from './types';
 
 // Load environment variables
 dotenv.config();

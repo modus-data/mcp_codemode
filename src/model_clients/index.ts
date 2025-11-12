@@ -1,4 +1,4 @@
-export { ILLMClient, LLMFunction } from './types.js';
-export { OpenRouterClient } from './openrouter.js';
-export { OpenAIClient } from './openai.js';
+export { ILLMClient, LLMFunction } from './types';
+export { OpenRouterClient } from './openrouter';
+export { OpenAIClient } from './openai';
 

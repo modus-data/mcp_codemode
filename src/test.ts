@@ -1,4 +1,4 @@
-import { OpenRouterClient, OpenAIClient, ILLMClient } from './model_clients/index.js';
+import { OpenRouterClient, OpenAIClient, ILLMClient } from './model_clients';
 import { 
   PipedreamProvider, 
   ComposioProvider,
@@ -9,14 +9,14 @@ import {
   getCatalogStructure,
   getToolsInCategory,
   getToolByPath
-} from './mcp_providers/index.js';
+} from './mcp_providers';
 import {
   IRunEnvironment,
   ExecutionResult,
   ExecutionOptions,
   LocalRunEnvironment,
   E2BRunEnvironment
-} from './run_environments/index.js';
+} from './run_environments';
 
 async function main() {
   // Example: Using OpenRouter client
@@ -189,7 +189,7 @@ async function main() {
 main().catch(console.error);
 
 // CodeModeMCP
-export { CodeModeMCP, CodeModeMCPConfig, RunMCPCodeOptions } from './CodeModeMCP.js';
+export { CodeModeMCP, CodeModeMCPConfig, RunMCPCodeOptions } from './CodeModeMCP';
 
 // Re-export all modules for library usage
 export {

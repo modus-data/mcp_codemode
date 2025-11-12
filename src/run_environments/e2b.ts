@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { IRunEnvironment, ExecutionResult, ExecutionOptions } from './types.js';
+import { IRunEnvironment, ExecutionResult, ExecutionOptions } from './types';
 
 // Load environment variables
 dotenv.config();

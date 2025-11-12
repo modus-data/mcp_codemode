@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { IRunEnvironment, ExecutionResult, ExecutionOptions } from './types.js';
+import { IRunEnvironment, ExecutionResult, ExecutionOptions } from './types';
 
 const execAsync = promisify(exec);
 

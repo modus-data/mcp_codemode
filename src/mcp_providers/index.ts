@@ -1,11 +1,11 @@
-export { IMCPProvider, MCPTool, ToolParameter, ToolCatalog, ToolFilterOptions } from './types.js';
-export { PipedreamProvider } from './pipedream.js';
-export { ComposioProvider, ComposioConfig } from './composio.js';
+export { IMCPProvider, MCPTool, ToolParameter, ToolCatalog, ToolFilterOptions } from './types';
+export { PipedreamProvider } from './pipedream';
+export { ComposioProvider, ComposioConfig } from './composio';
 export {
   isMCPTool,
   listAllToolPaths,
   getToolByPath,
   getToolsInCategory,
   getCatalogStructure,
-} from './utils.js';
+} from './utils';
 
