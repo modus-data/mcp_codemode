@@ -19,7 +19,7 @@ export interface GenerateToolsCodeOptions {
   runEnvironment: IRunEnvironment;
   
   /**
-   * Base directory where the mcp_tools folder will be created
+   * Base directory where the functions folder will be created
    * @default "."
    */
   baseDir?: string;
@@ -49,7 +49,7 @@ export interface GenerateToolsCodeResult {
  * Generate TypeScript code files for tools in the catalog
  * 
  * This function:
- * 1. Creates a hierarchical folder structure under mcp_tools/
+ * 1. Creates a hierarchical folder structure under functions/
  * 2. Generates TypeScript files with function signatures for each tool
  * 3. Uses TypeScript's compiler API for proper AST generation
  * 4. Leaves function bodies empty
@@ -67,7 +67,7 @@ export async function generateToolsCode(
   } = options;
   
   // baseDir is relative to the environment's working directory
-  const outputDir = path.join(baseDir, 'mcp_tools');
+  const outputDir = path.join(baseDir, 'functions');
   const allToolPaths = listAllToolPaths(catalog);
   
   console.log(`\n🔨 Generating TypeScript Code:`);
@@ -86,7 +86,7 @@ export async function generateToolsCode(
   
   const generatedFiles: string[] = [];
   
-  // Create the base mcp_tools directory
+  // Create the base functions directory
   await createDirectory(runEnvironment, outputDir);
   
   // Process each tool

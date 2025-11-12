@@ -72,7 +72,7 @@ async function main() {
     if (error.message === 'runMCPCode not yet fully implemented') {
       console.log(`\n✅ Tool filtering and code generation steps completed successfully!`);
       console.log(`   The tinyLLM successfully filtered the catalog to only relevant tools.`);
-      console.log(`   TypeScript tool files have been generated in the mcp_tools/ directory.`);
+      console.log(`   TypeScript tool files have been generated in the functions/ directory.`);
       console.log(`   (Note: Full execution flow not yet implemented - this is expected)\n`);
     } else {
       throw error;

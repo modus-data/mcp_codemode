@@ -16,7 +16,7 @@ export class LocalRunEnvironment implements IRunEnvironment {
   private tempDir: string | null = null;
 
   constructor(workDir?: string) {
-    this.workDir = workDir || path.join(os.tmpdir(), 'mcp-codemode');
+    this.workDir = workDir || path.join(os.tmpdir());
   }
 
   /**

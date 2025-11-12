@@ -16,7 +16,7 @@ async function main() {
         strategyLLM: openRouterClient.getLLM('anthropic/claude-sonnet-4.5'), // for strategic reasoning and planning
     },
     tools: await composioProvider.getTools({ toolkits: ['slack', 'gmail'] }),
-    runEnvironment: new LocalRunEnvironment('./tmp/mcp-codemode'),
+    runEnvironment: new LocalRunEnvironment('./tmp/'),
   });
 
   try {
