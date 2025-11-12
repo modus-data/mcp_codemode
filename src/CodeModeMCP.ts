@@ -2,6 +2,7 @@ import { LLMFunction } from './model_clients/types';
 import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
+import { filterToolsForQuery } from './steps';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -69,6 +70,18 @@ export interface RunMCPCodeOptions {
    * Optional user query/task to execute
    */
   query?: string;
+  
+  /**
+   * Maximum number of tools to include per LLM prompt for filtering
+   * @default 20
+   */
+  maxToolsPerPrompt?: number;
+  
+  /**
+   * Maximum number of concurrent LLM calls for parallel filtering
+   * @default 5
+   */
+  maxConcurrentThreads?: number;
 }
 
 /**
@@ -116,20 +129,31 @@ export class CodeModeMCP {
       maxToolCalls,
       totalExecutionTimeout,
       toolCallTimeout,
-      query
+      query,
+      maxToolsPerPrompt = 20,
+      maxConcurrentThreads = 5
     } = options;
 
-    // TODO: Implement the main execution loop
     console.log('Starting MCP code execution with options:', {
       maxToolCalls,
       totalExecutionTimeout,
       toolCallTimeout,
-      query: query || 'No query provided'
+      query: query || 'No query provided',
+      maxToolsPerPrompt,
+      maxConcurrentThreads
     });
 
-    // Placeholder for now - actual implementation will coordinate:
-    // 1. Use strategyLLM to plan the approach
-    // 2. Use tinyLLM to filter and select tools
+    // Step 1: Filter tools using tinyLLM
+    const filterResult = await filterToolsForQuery({
+      query: query || '',
+      catalog: this.tools,
+      llmFunction: this.tinyLLM,
+      maxToolsPerPrompt,
+      maxConcurrentThreads
+    });
+
+    // TODO: Continue with the rest of the execution loop
+    // 2. Use strategyLLM to plan the approach
     // 3. Use mainLLM to generate code and orchestrate execution
     // 4. Use runEnvironment to execute code safely
     
