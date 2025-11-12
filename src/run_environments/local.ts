@@ -12,9 +12,12 @@ const execAsync = promisify(exec);
  * Executes code on the local machine
  */
 export class LocalRunEnvironment implements IRunEnvironment {
+  private workDir: string;
   private tempDir: string | null = null;
 
-  constructor() {}
+  constructor(workDir?: string) {
+    this.workDir = workDir || path.join(os.tmpdir(), 'mcp-codemode');
+  }
 
   /**
    * Gets the appropriate file extension and command for a language
@@ -69,9 +72,10 @@ export class LocalRunEnvironment implements IRunEnvironment {
       const language = options?.language || 'bash';
       const config = this.getLanguageConfig(language);
       
-      // Create temp directory if not exists
+      // Create working directory if not exists
       if (!this.tempDir) {
-        this.tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'mcp-codemode-'));
+        await fs.mkdir(this.workDir, { recursive: true });
+        this.tempDir = await fs.mkdtemp(path.join(this.workDir, 'session-'));
       }
 
       // Write code to temp file

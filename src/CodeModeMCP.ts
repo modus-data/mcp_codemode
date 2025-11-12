@@ -72,6 +72,16 @@ export interface RunMCPCodeOptions {
 }
 
 /**
+ * Result of MCP code execution
+ */
+export interface MCPExecutionResult {
+  /**
+   * The result type indicating the outcome of the execution
+   */
+  resultType: 'success' | 'partial' | 'failure';
+}
+
+/**
  * CodeModeMCP - Main class for orchestrating LLM-powered MCP tool execution
  * 
  * This class coordinates three different LLM models with different specializations:
@@ -99,9 +109,9 @@ export class CodeModeMCP {
   /**
    * Run MCP code with the specified options
    * @param options Configuration for the execution run
-   * @returns Promise that resolves when execution completes
+   * @returns Promise that resolves with the execution result
    */
-  async runMCPCode(options: RunMCPCodeOptions): Promise<void> {
+  async runMCPCode(options: RunMCPCodeOptions): Promise<MCPExecutionResult> {
     const {
       maxToolCalls,
       totalExecutionTimeout,
