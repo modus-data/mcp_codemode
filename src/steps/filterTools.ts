@@ -22,6 +22,12 @@ export interface FilterToolsOptions {
   llmFunction: LLMFunction;
   
   /**
+   * Optional pseudocode outlining the approach to accomplish the task
+   * This helps guide tool filtering by providing strategic context
+   */
+  pseudocode?: string;
+  
+  /**
    * Maximum number of tools to include per LLM prompt
    * @default 20
    */
@@ -79,6 +85,7 @@ export async function filterToolsForQuery(
     query,
     catalog,
     llmFunction,
+    pseudocode,
     maxToolsPerPrompt = 20,
     maxConcurrentThreads = 20
   } = options;
@@ -126,7 +133,7 @@ export async function filterToolsForQuery(
   for (let i = 0; i < batches.length; i += maxConcurrentThreads) {
     const batchSlice = batches.slice(i, i + maxConcurrentThreads);
     const promises = batchSlice.map(batch => 
-      filterToolBatch(batch, query, llmFunction)
+      filterToolBatch(batch, query, llmFunction, pseudocode)
     );
     const results = await Promise.all(promises);
     
@@ -169,12 +176,14 @@ export async function filterToolsForQuery(
  * @param batch Array of tools with their paths
  * @param query The user query
  * @param llmFunction The LLM function to use
+ * @param pseudocode Optional pseudocode to guide filtering
  * @returns Array of selected tool paths
  */
 async function filterToolBatch(
   batch: Array<{ path: string; tool: MCPTool }>,
   query: string,
-  llmFunction: LLMFunction
+  llmFunction: LLMFunction,
+  pseudocode?: string
 ): Promise<string[]> {
   // Create a prompt for the LLM
   const toolDescriptions = batch.map((item, index) => {
@@ -184,6 +193,10 @@ async function filterToolBatch(
     return `${index + 1}. ${item.path}\n   Description: ${item.tool.description}\n   Parameters: ${params}`;
   }).join('\n\n');
   
+  const pseudocodeSection = pseudocode 
+    ? `\nApproach/Pseudocode:\n${pseudocode}\n` 
+    : '';
+  
   const prompt = `
 Select ONLY the tools that are directly relevant and necessary to accomplish the provided task.
 Be permissive - select the most relevant tools, even if they are not strictly necessary.
@@ -192,7 +205,7 @@ Respond with ONLY the numbers of relevant tools, comma-separated (e.g., "1,3,5")
 If no tools are relevant, respond with "none".
 
 Given this user query: "${query}"
-
+${pseudocodeSection}
 Available tools:
 ${toolDescriptions}
 `;

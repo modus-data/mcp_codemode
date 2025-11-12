@@ -2,7 +2,7 @@ import { LLMFunction } from './model_clients/types';
 import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
-import { filterToolsForQuery, generateToolsCode } from './steps';
+import { generatePseudocode, filterToolsForQuery, generateToolsCode } from './steps';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -143,16 +143,24 @@ export class CodeModeMCP {
       maxConcurrentThreads
     });
 
-    // Step 1: Filter tools using tinyLLM
+    // Step 1: Generate pseudocode using strategyLLM
+    const pseudocodeResult = await generatePseudocode({
+      query: query || '',
+      catalog: this.tools,
+      llmFunction: this.strategyLLM
+    });
+
+    // Step 2: Filter tools using tinyLLM with pseudocode guidance
     const filterResult = await filterToolsForQuery({
       query: query || '',
       catalog: this.tools,
       llmFunction: this.tinyLLM,
+      pseudocode: pseudocodeResult.pseudocode,
       maxToolsPerPrompt,
       maxConcurrentThreads
     });
 
-    // Step 2: Generate TypeScript code for filtered tools
+    // Step 3: Generate TypeScript code for filtered tools
     if (this.runEnvironment) {
       const generateResult = await generateToolsCode({
         catalog: filterResult.filteredCatalog,

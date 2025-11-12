@@ -9,6 +9,12 @@
  */
 
 export {
+  generatePseudocode,
+  GeneratePseudocodeOptions,
+  GeneratePseudocodeResult
+} from './generatePseudocode';
+
+export {
   filterToolsForQuery,
   FilterToolsOptions,
   FilterToolsResult
