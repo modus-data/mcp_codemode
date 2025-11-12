@@ -123,3 +123,23 @@ export function getCatalogStructure(catalog: ToolCatalog): any {
   return structure;
 }
 
+/**
+ * Flattens a hierarchical tool catalog into a flat array of tools
+ * @param catalog The tool catalog to flatten
+ * @returns Array of all MCPTool objects in the catalog
+ */
+export function flattenToolCatalog(catalog: ToolCatalog): MCPTool[] {
+  const tools: MCPTool[] = [];
+
+  for (const value of Object.values(catalog)) {
+    if (isMCPTool(value)) {
+      tools.push(value);
+    } else {
+      // Recursively flatten nested catalogs
+      tools.push(...flattenToolCatalog(value as ToolCatalog));
+    }
+  }
+
+  return tools;
+}
+
