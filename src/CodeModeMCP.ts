@@ -2,7 +2,7 @@ import { LLMFunction } from './model_clients/types';
 import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
-import { generatePseudocode, filterToolsForQuery, generateToolsCode } from './steps';
+import { generatePseudocode, filterToolsForQuery, generateToolsCode, implementCode } from './steps';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -160,28 +160,52 @@ export class CodeModeMCP {
       maxConcurrentThreads
     });
 
-    // Step 3: Generate TypeScript code for filtered tools
+    // Step 3: Generate TypeScript interfaces (in memory, no file I/O)
+    let interfacesCode = '';
     if (this.runEnvironment) {
       const generateResult = await generateToolsCode({
         catalog: filterResult.filteredCatalog,
         runEnvironment: this.runEnvironment,
-        baseDir: '.'  // Relative to the environment's working directory
+        baseDir: '.'
       });
 
-      console.log(`\n✅ Code generation complete:`);
-      console.log(`   Files generated: ${generateResult.filesGenerated}`);
-      console.log(`   Output directory: ${generateResult.outputDir}`);
-      console.log(`   Location: ${this.runEnvironment.getWorkingDirectory()}`);
+      interfacesCode = generateResult.interfacesCode;
+      console.log(`\n✅ Interface generation complete:`);
+      console.log(`   Interfaces generated: ${generateResult.filesGenerated}`);
+      console.log(`   Total code size: ${interfacesCode.length} characters`);
     } else {
       console.log(`\n⚠️  Skipping code generation - no run environment configured`);
+      throw new Error('Run environment is required for code generation');
     }
 
-    // TODO: Continue with the rest of the execution loop
-    // 3. Use strategyLLM to plan the approach
-    // 4. Use mainLLM to generate code and orchestrate execution
-    // 5. Use runEnvironment to execute code safely
+    // Step 4: Use mainLLM to generate implementation based on pseudocode and interfaces
+    const implementResult = await implementCode({
+      query: query || '',
+      pseudocode: pseudocodeResult.pseudocode,
+      interfacesCode,
+      llmFunction: this.mainLLM
+    });
+
+    // Print the output
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`📝 GENERATED CODE:`);
+    console.log(`${'='.repeat(80)}\n`);
+    console.log(implementResult.fullProgram);
+    console.log(`\n${'='.repeat(80)}`);
     
-    throw new Error('runMCPCode not yet fully implemented');
+    if (implementResult.compilesSuccessfully) {
+      console.log(`✅ Code compiles successfully!`);
+    } else {
+      console.log(`❌ Code has compilation errors:`);
+      implementResult.compilationErrors.forEach(error => console.log(`   ${error}`));
+    }
+    console.log(`${'='.repeat(80)}\n`);
+
+    // TODO: Step 5: Execute the code using runEnvironment
+    // For now, we just return success based on compilation
+    return {
+      resultType: implementResult.compilesSuccessfully ? 'success' : 'failure'
+    };
   }
 
   /**

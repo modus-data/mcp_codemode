@@ -43,6 +43,16 @@ export interface GenerateToolsCodeResult {
    * Base directory where files were created
    */
   outputDir: string;
+  
+  /**
+   * Generated interfaces code (in-memory)
+   */
+  interfacesCode: string;
+  
+  /**
+   * Map of tool paths to their interface code
+   */
+  toolInterfaces: Map<string, string>;
 }
 
 /**
@@ -70,9 +80,7 @@ export async function generateToolsCode(
   const outputDir = path.join(baseDir, 'functions');
   const allToolPaths = listAllToolPaths(catalog);
   
-  console.log(`\n🔨 Generating TypeScript Code:`);
-  console.log(`   Base directory: ${baseDir}`);
-  console.log(`   Output directory: ${outputDir}`);
+  console.log(`\n🔨 Generating TypeScript Interfaces (in-memory):`);
   console.log(`   Total tools to generate: ${allToolPaths.length}`);
   
   if (allToolPaths.length === 0) {
@@ -80,39 +88,42 @@ export async function generateToolsCode(
     return {
       filesGenerated: 0,
       generatedFiles: [],
-      outputDir
+      outputDir,
+      interfacesCode: '',
+      toolInterfaces: new Map()
     };
   }
   
-  const generatedFiles: string[] = [];
+  const toolInterfaces = new Map<string, string>();
+  let interfacesCode = '';
   
-  // Create the base functions directory
-  await createDirectory(runEnvironment, outputDir);
-  
-  // Process each tool
+  // Process each tool - generate interfaces in memory
   for (const toolPath of allToolPaths) {
     const tool = getToolByPath(catalog, toolPath);
     if (!tool) continue;
     
-    const fileInfo = await generateToolFile(
-      runEnvironment,
-      outputDir,
-      toolPath,
-      tool
-    );
+    const interfaceCode = generateToolInterfaceCode(tool, toolPath);
+    toolInterfaces.set(toolPath, interfaceCode);
     
-    generatedFiles.push(fileInfo.relativePath);
-    console.log(`   ✅ Generated: ${fileInfo.relativePath}`);
+    // Add tool path and name as a comment, then the interface
+    interfacesCode += `// Tool: ${toolPath}\n`;
+    interfacesCode += `// Function name: ${tool.name}\n`;
+    interfacesCode += interfaceCode;
+    interfacesCode += '\n\n';
+    
+    console.log(`   ✅ Generated interface: ${toolPath} -> ${tool.name}()`);
   }
   
   console.log(`\n   📦 Summary:`);
-  console.log(`   Files generated: ${generatedFiles.length}`);
-  console.log(`   Output directory: ${outputDir}`);
+  console.log(`   Interfaces generated: ${toolInterfaces.size}`);
+  console.log(`   Total code size: ${interfacesCode.length} characters`);
   
   return {
-    filesGenerated: generatedFiles.length,
-    generatedFiles,
-    outputDir
+    filesGenerated: toolInterfaces.size,
+    generatedFiles: Array.from(toolInterfaces.keys()),
+    outputDir,
+    interfacesCode,
+    toolInterfaces
   };
 }
 
@@ -146,6 +157,68 @@ async function generateToolFile(
   
   const relativePath = path.relative(baseDir, fullPath);
   return { relativePath, fullPath };
+}
+
+/**
+ * Generate only the TypeScript interface for a tool (no implementation)
+ */
+function generateToolInterfaceCode(tool: MCPTool, toolPath: string): string {
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.LineFeed,
+  });
+  
+  // Create parameter type interface
+  const interfaceName = `${capitalize(tool.name)}Params`;
+  const interfaceMembers = tool.parameters.map(param => 
+    ts.factory.createPropertySignature(
+      undefined,
+      ts.factory.createIdentifier(param.name),
+      param.required 
+        ? undefined 
+        : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+      ts.factory.createTypeReferenceNode(
+        mapTypeStringToTSType(param.type)
+      )
+    )
+  );
+  
+  const paramInterface = ts.factory.createInterfaceDeclaration(
+    [ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+    ts.factory.createIdentifier(interfaceName),
+    undefined,
+    undefined,
+    interfaceMembers
+  );
+  
+  // Add JSDoc comment to interface
+  const paramsDoc = tool.parameters.map(param => 
+    ` * @param ${param.name} ${param.description} (${param.type}${param.required ? ', required' : ', optional'})`
+  ).join('\n');
+  
+  const interfaceWithComment = ts.addSyntheticLeadingComment(
+    paramInterface,
+    ts.SyntaxKind.MultiLineCommentTrivia,
+    `*\n * Parameters for ${tool.name}\n * ${tool.description}\n *\n${paramsDoc}\n `,
+    true
+  );
+  
+  // Create source file for printing
+  const sourceFile = ts.createSourceFile(
+    'temp.ts',
+    '',
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TS
+  );
+  
+  const interfaceCode = printer.printNode(
+    ts.EmitHint.Unspecified,
+    interfaceWithComment,
+    sourceFile
+  );
+  
+  // Just return the interface - mainLLM will implement the functions
+  return interfaceCode;
 }
 
 /**

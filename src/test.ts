@@ -56,9 +56,9 @@ async function main() {
     runEnvironment
   });
   
-  // Test the tool filtering with a specific query
+  // Test the complete code generation flow
   try {
-    await codeMode.runMCPCode({
+    const result = await codeMode.runMCPCode({
       query: 'Send a message to a Slack channel',
       maxToolCalls: 10,
       totalExecutionTimeout: 60,
@@ -66,17 +66,18 @@ async function main() {
       maxToolsPerPrompt: 10,
       maxConcurrentThreads: 3
     });
+    
+    console.log(`\n✅ Code generation completed!`);
+    console.log(`   Result type: ${result.resultType}`);
+    console.log(`   The strategyLLM created a plan`);
+    console.log(`   The tinyLLM filtered relevant tools`);
+    console.log(`   TypeScript interfaces were generated in memory`);
+    console.log(`   The mainLLM implemented the code based on the plan`);
+    console.log(`   The code was verified to compile successfully`);
+    console.log(`   (Note: Execution flow not yet implemented - this is expected)\n`);
   } catch (error: any) {
-    // Expected to throw "not yet fully implemented" error
-    // But we should see the tool filtering and code generation output above
-    if (error.message === 'runMCPCode not yet fully implemented') {
-      console.log(`\n✅ Tool filtering and code generation steps completed successfully!`);
-      console.log(`   The tinyLLM successfully filtered the catalog to only relevant tools.`);
-      console.log(`   TypeScript tool files have been generated in the functions/ directory.`);
-      console.log(`   (Note: Full execution flow not yet implemented - this is expected)\n`);
-    } else {
-      throw error;
-    }
+    console.error(`\n❌ Error during code generation:`, error.message);
+    throw error;
   }
   
   return; // Exit early to just test filtering

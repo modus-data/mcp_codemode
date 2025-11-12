@@ -26,3 +26,8 @@ export {
   GenerateToolsCodeResult
 } from './generateToolsCode';
 
+export {
+  implementCode,
+  ImplementCodeOptions,
+  ImplementCodeResult
+} from './implementCode';
