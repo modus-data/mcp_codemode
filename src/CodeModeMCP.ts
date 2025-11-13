@@ -82,6 +82,12 @@ export interface RunMCPCodeOptions {
    * @default 5
    */
   maxConcurrentThreads?: number;
+  
+  /**
+   * Whether to include tool descriptions in the filter output logs
+   * @default false
+   */
+  includeDescriptionsInFilter?: boolean;
 }
 
 /**
@@ -166,7 +172,8 @@ export class CodeModeMCP {
       toolCallTimeout,
       query,
       maxToolsPerPrompt = 20,
-      maxConcurrentThreads = 8
+      maxConcurrentThreads = 8,
+      includeDescriptionsInFilter = false
     } = options;
 
     const overallStartTime = Date.now();
@@ -204,7 +211,8 @@ export class CodeModeMCP {
       llmFunction: this.tinyLLM,
       pseudocode: pseudocodeResult.pseudocode,
       maxToolsPerPrompt,
-      maxConcurrentThreads
+      maxConcurrentThreads,
+      includeDescriptions: includeDescriptionsInFilter
     });
     endTime = Date.now();
     timings.push({

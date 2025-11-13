@@ -38,6 +38,12 @@ export interface FilterToolsOptions {
    * @default 5
    */
   maxConcurrentThreads?: number;
+  
+  /**
+   * Whether to include tool descriptions in the output logs
+   * @default false
+   */
+  includeDescriptions?: boolean;
 }
 
 /**
@@ -87,7 +93,8 @@ export async function filterToolsForQuery(
     llmFunction,
     pseudocode,
     maxToolsPerPrompt = 20,
-    maxConcurrentThreads = 20
+    maxConcurrentThreads = 20,
+    includeDescriptions = false
   } = options;
   
   // Flatten the catalog to get all tools with their paths
@@ -148,16 +155,23 @@ export async function filterToolsForQuery(
   console.log(`   ✅ Selected tools: ${selectedPaths.length} out of ${totalTools}`);
   
   if (selectedPaths.length > 0) {
-    console.log(`   Selected tools with descriptions:`);
-    selectedPaths.forEach(path => {
-      const tool = getToolByPath(catalog, path);
-      if (tool) {
+    if (includeDescriptions) {
+      console.log(`   Selected tools with descriptions:`);
+      selectedPaths.forEach(path => {
+        const tool = getToolByPath(catalog, path);
+        if (tool) {
+          console.log(`     - ${path}`);
+          console.log(`       Description: ${tool.description}`);
+        } else {
+          console.log(`     - ${path}`);
+        }
+      });
+    } else {
+      console.log(`   Selected tools:`);
+      selectedPaths.forEach(path => {
         console.log(`     - ${path}`);
-        console.log(`       Description: ${tool.description}`);
-      } else {
-        console.log(`     - ${path}`);
-      }
-    });
+      });
+    }
   }
   
   // Reconstruct the filtered catalog with the same structure
