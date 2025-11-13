@@ -212,6 +212,7 @@ REQUIREMENTS:
 - Include descriptive console.log statements for debugging
 - Handle all errors gracefully with try/catch
 - Return structured results (objects with success/error fields)
+- Use concurrency with Promise.all when possible to speed up the execution
 
 OUTPUT FORMAT:
 Provide ONLY TypeScript code, no explanations, no markdown formatting. Start with the main function, then the execution code.`;
