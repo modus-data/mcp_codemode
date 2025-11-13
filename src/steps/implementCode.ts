@@ -86,8 +86,11 @@ export async function implementCode(
   const implementationCode = await llmFunction(prompt);
   console.log(`   ✅ Received implementation (${implementationCode.length} characters)`);
   
-  // Combine interfaces and implementation
-  const fullProgram = `${interfacesCode}\n\n${implementationCode}`;
+  // Generate function declarations for the tool functions
+  const functionDeclarations = generateFunctionDeclarations(interfacesCode);
+  
+  // Combine interfaces, function declarations, and implementation
+  const fullProgram = `${interfacesCode}\n\n${functionDeclarations}\n\n${implementationCode}`;
   
   // Verify TypeScript compilation
   console.log(`   🔍 Verifying TypeScript compilation...`);
@@ -102,11 +105,13 @@ export async function implementCode(
     });
   }
   
+  // Return the implementation code (just the main function, not the declarations)
+  // The fullProgram includes declarations for verification, but we return just the implementation
   return {
     implementationCode,
     compilesSuccessfully: compilationResult.success,
     compilationErrors: compilationResult.errors,
-    fullProgram
+    fullProgram: implementationCode // Return only the implementation, not the declarations
   };
 }
 
@@ -132,27 +137,69 @@ ${interfacesCode}
 YOUR TASK:
 Generate a complete, self-contained TypeScript program that follows the strategic plan.
 
+CRITICAL: The tool functions are ALREADY IMPLEMENTED and will be available at runtime.
+Each tool function is named with uppercase and underscores matching the tool path.
+
+For example:
+- Tool path: slack.list.all_channels → Function name: SLACK_LIST_ALL_CHANNELS
+- Tool path: slack.chat.post_message → Function name: SLACK_CHAT_POST_MESSAGE
+- Tool path: slack.add.reaction_to_an_item → Function name: SLACK_ADD_REACTION_TO_AN_ITEM
+
+IMPORTANT - Response Structure:
+Tool responses follow this structure:
+{
+  data: { /* actual response data here */ },
+  successful: boolean,
+  error: any,
+  log_id: string
+}
+
+For example, SLACK_LIST_ALL_CHANNELS returns:
+{
+  data: {
+    channels: [...],
+    ok: true,
+    response_metadata: { next_cursor: '...' }
+  },
+  successful: true,
+  error: null
+}
+
+So to access channels, use: response.data.channels (NOT response.channels)
+
 IMPORTANT STRUCTURE REQUIREMENTS:
 
-1. First, implement stub functions for each tool interface you see above.
-   - Each stub function should be named exactly as shown in the interface (e.g., "post_message", "all_channels")
-   - Use the corresponding Params interface (e.g., Post_messageParams, All_channelsParams)
-   - Each stub should have a simple implementation that throws an error or returns mock data
-   - Example:
-     async function post_message(params: Post_messageParams): Promise<any> {
-       // TODO: This would call the actual MCP tool
-       console.log('Calling post_message with:', params);
-       return { ok: true, ts: '1234567890.123456', channel: params.channel };
-     }
-
-2. Then, implement a main() function that:
+1. Implement a main() function that:
    - Follows the strategic plan step by step
-   - Calls the stub functions you created
+   - CALLS the provided tool functions (they're already implemented - don't create them!)
+   - Use the function names in UPPERCASE_WITH_UNDERSCORES format
+   - Pass parameters using the Params interfaces provided
    - Includes proper error handling (try/catch)
    - Logs progress to console
    - Returns a meaningful result object
+   
+   Example:
+     async function main() {
+       try {
+         // Call the already-implemented tool function
+         const result = await SLACK_LIST_ALL_CHANNELS({ limit: 100 });
+         const channels = result.channels;
+         
+         for (const channel of channels) {
+           await SLACK_CHAT_POST_MESSAGE({
+             channel: channel.id,
+             markdown_text: 'Hello!'
+           });
+         }
+         
+         return { success: true };
+       } catch (error) {
+         console.error('Error:', error);
+         return { success: false, error };
+       }
+     }
 
-3. Finally, add code to execute main():
+2. Finally, add code to execute main():
    main()
      .then(result => console.log('Result:', result))
      .catch(error => console.error('Error:', error));
@@ -160,13 +207,36 @@ IMPORTANT STRUCTURE REQUIREMENTS:
 REQUIREMENTS:
 - Do NOT import anything - this is a self-contained program
 - Do NOT repeat the interface definitions (they're already provided above)
+- Do NOT implement the tool functions - they are already available!
 - Use async/await for all asynchronous operations
 - Include descriptive console.log statements for debugging
 - Handle all errors gracefully with try/catch
 - Return structured results (objects with success/error fields)
 
 OUTPUT FORMAT:
-Provide ONLY TypeScript code, no explanations, no markdown formatting. Start with the stub function implementations, then the main function, then the execution code.`;
+Provide ONLY TypeScript code, no explanations, no markdown formatting. Start with the main function, then the execution code.`;
+}
+
+/**
+ * Generate function declarations for tool functions based on interfaces
+ */
+function generateFunctionDeclarations(interfacesCode: string): string {
+  const declarations: string[] = [];
+  
+  // Extract all interface names that end with "Params"
+  const interfaceRegex = /export\s+interface\s+(\w+Params)\s*\{/g;
+  let match;
+  
+  while ((match = interfaceRegex.exec(interfacesCode)) !== null) {
+    const paramsInterfaceName = match[1];
+    // Convert e.g. "SLACK_LIST_ALL_CHANNELSParams" to "SLACK_LIST_ALL_CHANNELS"
+    const functionName = paramsInterfaceName.replace(/Params$/, '');
+    
+    // Generate a declare function statement
+    declarations.push(`declare function ${functionName}(params: ${paramsInterfaceName}): Promise<any>;`);
+  }
+  
+  return declarations.join('\n');
 }
 
 /**

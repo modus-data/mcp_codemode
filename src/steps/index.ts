@@ -31,3 +31,9 @@ export {
   ImplementCodeOptions,
   ImplementCodeResult
 } from './implementCode';
+
+export {
+  executeCode,
+  ExecuteCodeOptions,
+  ExecuteCodeResult
+} from './executeCode';

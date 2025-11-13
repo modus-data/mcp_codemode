@@ -1,13 +1,50 @@
 import { OpenRouterClient, ILLMClient } from './model_clients';
 import { CodeModeMCP, CodeModeMCPConfig, MCPExecutionResult, StepTiming } from './CodeModeMCP';
-import { ComposioProvider } from './mcp_providers/composio';
+import { ComposioProvider, ComposioConfig } from './mcp_providers/composio';
 import { LocalRunEnvironment } from './run_environments';
+import axios from 'axios';
 
 async function main() {
   console.log('=== Initializing CodeModeMCP ===\n');
   
   const openRouterClient: ILLMClient = new OpenRouterClient();
-  const composioProvider = new ComposioProvider();
+  
+  // Setup Composio with connected account
+  const composioConfig: ComposioConfig = {
+    projectId: 'pr_VkAXHNA8WZkP',
+  };
+  
+  // Fetch connected accounts from Composio
+  try {
+    console.log('Fetching connected accounts from Composio...');
+    const response = await axios.get('https://backend.composio.dev/api/v3/connected_accounts', {
+      headers: {
+        'X-API-Key': process.env.COMPOSIO_API_KEY || '',
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (response.data && response.data.items && response.data.items.length > 0) {
+      // Find the first Slack account
+      const slackAccount = response.data.items.find((acc: any) => {
+        const appIdentifier = (acc.toolkit?.slug || acc.appName || acc.integrationId || '').toLowerCase();
+        return appIdentifier === 'slack' || appIdentifier.includes('slack');
+      });
+      
+      if (slackAccount) {
+        console.log(`✓ Found Slack account: ${slackAccount.id}`);
+        composioConfig.connectedAccountId = slackAccount.id;
+        composioConfig.userId = slackAccount.user_id;
+      } else {
+        console.warn('⚠ No Slack account found. Visit: https://app.composio.dev/apps/slack');
+      }
+    }
+  } catch (error: any) {
+    console.error('Error fetching connected accounts:', error.response?.data || error.message);
+    console.log('Make sure COMPOSIO_API_KEY is set in your .env file');
+  }
+  
+  const composioProvider = new ComposioProvider(composioConfig);
   
   const codeModeMCP = new CodeModeMCP({
     llms: {
@@ -21,7 +58,8 @@ async function main() {
 
   try {
     const result: MCPExecutionResult = await codeModeMCP.runMCPCode({
-      query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
+    //   query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
+      query: "print all channels in slack",
       maxToolCalls: 100,
       totalExecutionTimeout: 60,
       toolCallTimeout: 10,

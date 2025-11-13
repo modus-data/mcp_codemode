@@ -2,7 +2,7 @@ import { LLMFunction } from './model_clients/types';
 import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
-import { generatePseudocode, filterToolsForQuery, generateToolsCode, implementCode } from './steps';
+import { generatePseudocode, filterToolsForQuery, generateToolsCode, implementCode, executeCode } from './steps';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -282,16 +282,42 @@ export class CodeModeMCP {
     }
     console.log(`${'='.repeat(80)}\n`);
 
+    // If compilation failed, return early
+    if (!implementResult.compilesSuccessfully) {
+      const totalDurationMs = Date.now() - overallStartTime;
+      this.printTimingReport(timings, totalDurationMs);
+      return {
+        resultType: 'failure',
+        timings,
+        totalDurationMs
+      };
+    }
+
+    // Step 6: Wire MCP tools and execute the code
+    startTime = Date.now();
+    const executeResult = await executeCode({
+      mainCode: implementResult.fullProgram,
+      catalog: filterResult.filteredCatalog,
+      runEnvironment: this.runEnvironment!,
+      baseDir: '.'
+    });
+    endTime = Date.now();
+    timings.push({
+      stepName: 'Wire and Execute Code',
+      durationMs: endTime - startTime,
+      startTime,
+      endTime
+    });
+
     // Calculate total duration
     const totalDurationMs = Date.now() - overallStartTime;
 
     // Print timing report
     this.printTimingReport(timings, totalDurationMs);
 
-    // TODO: Step 6: Execute the code using runEnvironment
-    // For now, we just return success based on compilation
+    // Return result based on execution success
     return {
-      resultType: implementResult.compilesSuccessfully ? 'success' : 'failure',
+      resultType: executeResult.success ? 'success' : 'failure',
       timings,
       totalDurationMs
     };
