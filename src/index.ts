@@ -59,8 +59,7 @@ async function main() {
 
   try {
     const result: MCPExecutionResult = await codeModeMCP.runMCPCode({
-    //   query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
-      query: "send hello world to every channel in slack",
+      query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
       maxToolCalls: 100,
       totalExecutionTimeout: 60,
       toolCallTimeout: 10,

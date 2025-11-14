@@ -53,41 +53,38 @@ npm install @modus-data/mcp-codemode
 
 ```typescript
 import { CodeModeMCP } from '@modus-data/mcp-codemode';
-import { createOpenAIClient } from '@modus-data/mcp-codemode/model_clients';
-import { LocalEnvironment } from '@modus-data/mcp-codemode/run_environments';
+import { OpenRouterClient } from '@modus-data/mcp-codemode/model_clients';
+import { ComposioProvider } from '@modus-data/mcp-codemode/mcp_providers';
+import { E2BRunEnvironment } from '@modus-data/mcp-codemode/run_environments';
+
+// Initialize OpenRouter client for LLM access
+const openRouterClient = new OpenRouterClient();
+
+// Setup Composio with your project
+const composioProvider = new ComposioProvider({
+  projectId: 'your-project-id', // Optional: configure with connectedAccountId and userId
+});
 
 // Configure with three specialized LLMs
 const codeMode = new CodeModeMCP({
   llms: {
-    strategyLLM: createOpenAIClient('gpt-4', process.env.OPENAI_API_KEY),
-    tinyLLM: createOpenAIClient('gpt-3.5-turbo', process.env.OPENAI_API_KEY),
-    mainLLM: createOpenAIClient('gpt-4', process.env.OPENAI_API_KEY)
+    tinyLLM: openRouterClient.getLLM('openai/gpt-oss-20b'),      // Fast filtering model
+    mainLLM: openRouterClient.getLLM('openai/gpt-oss-120b'),     // Code generation model
+    strategyLLM: openRouterClient.getLLM('anthropic/claude-sonnet-4.5')  // Strategic planning
   },
-  tools: {
-    // Your hierarchical tool catalog
-    slack: {
-      message: {
-        send: { /* tool definition */ }
-      }
-    },
-    github: {
-      issues: {
-        create: { /* tool definition */ }
-      }
-    }
-  },
-  runEnvironment: new LocalEnvironment(),
+  tools: await composioProvider.getTools({ 
+    toolkits: ['slack', 'gmail', 'github'] // Specify the toolkits you need
+  }),
+  runEnvironment: new E2BRunEnvironment(), // Secure cloud sandbox
   logPath: './prompt_logs' // Optional: log all LLM interactions
 });
 
-// Execute a task
+// Execute a complex multi-step task
 const result = await codeMode.runMCPCode({
-  query: "Send a message to #general channel saying 'Hello World'",
-  maxToolCalls: 10,
+  query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
+  maxToolCalls: 100,
   totalExecutionTimeout: 60,
-  toolCallTimeout: 30,
-  maxToolsPerPrompt: 20,
-  maxConcurrentThreads: 5
+  toolCallTimeout: 10
 });
 
 console.log(`Execution: ${result.resultType}`);
