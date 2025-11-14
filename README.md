@@ -46,16 +46,16 @@ The system uses **three specialized LLMs**:
 ## Installation
 
 ```bash
-npm install @modus-data/mcp-codemode
+npm install mcp-codemode
 ```
 
 ## Quick Start
 
 ```typescript
-import { CodeModeMCP } from '@modus-data/mcp-codemode';
-import { OpenRouterClient } from '@modus-data/mcp-codemode/model_clients';
-import { ComposioProvider } from '@modus-data/mcp-codemode/mcp_providers';
-import { E2BRunEnvironment } from '@modus-data/mcp-codemode/run_environments';
+import { CodeModeMCP } from 'mcp-codemode';
+import { OpenRouterClient } from 'mcp-codemode/model_clients';
+import { ComposioProvider } from 'mcp-codemode/mcp_providers';
+import { E2BRunEnvironment } from 'mcp-codemode/run_environments';
 
 // Initialize OpenRouter client for LLM access
 const openRouterClient = new OpenRouterClient();
@@ -152,7 +152,7 @@ interface RunMCPCodeOptions {
 ### Custom LLM Integration
 
 ```typescript
-import { LLMFunction } from '@modus-data/mcp-codemode/model_clients';
+import { LLMFunction } from 'mcp-codemode/model_clients';
 
 const myCustomLLM: LLMFunction = async (prompt: string): Promise<string> => {
   // Your LLM integration here
@@ -173,7 +173,7 @@ const codeMode = new CodeModeMCP({
 ### Custom Run Environment
 
 ```typescript
-import { IRunEnvironment } from '@modus-data/mcp-codemode/run_environments';
+import { IRunEnvironment } from 'mcp-codemode/run_environments';
 
 class MyCustomEnvironment implements IRunEnvironment {
   async execute(code: string): Promise<{ success: boolean; output: string }> {
