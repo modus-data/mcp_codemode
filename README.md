@@ -46,15 +46,15 @@ The system uses **three specialized LLMs**:
 ## Installation
 
 ```bash
-npm install mcp_codemode
+npm install @modus-data/mcp-codemode
 ```
 
 ## Quick Start
 
 ```typescript
-import { CodeModeMCP } from 'mcp_codemode';
-import { createOpenAIClient } from 'mcp_codemode/model_clients';
-import { LocalEnvironment } from 'mcp_codemode/run_environments';
+import { CodeModeMCP } from '@modus-data/mcp-codemode';
+import { createOpenAIClient } from '@modus-data/mcp-codemode/model_clients';
+import { LocalEnvironment } from '@modus-data/mcp-codemode/run_environments';
 
 // Configure with three specialized LLMs
 const codeMode = new CodeModeMCP({
@@ -155,7 +155,7 @@ interface RunMCPCodeOptions {
 ### Custom LLM Integration
 
 ```typescript
-import { LLMFunction } from 'mcp_codemode/model_clients';
+import { LLMFunction } from '@modus-data/mcp-codemode/model_clients';
 
 const myCustomLLM: LLMFunction = async (prompt: string): Promise<string> => {
   // Your LLM integration here
@@ -176,7 +176,7 @@ const codeMode = new CodeModeMCP({
 ### Custom Run Environment
 
 ```typescript
-import { IRunEnvironment } from 'mcp_codemode/run_environments';
+import { IRunEnvironment } from '@modus-data/mcp-codemode/run_environments';
 
 class MyCustomEnvironment implements IRunEnvironment {
   async execute(code: string): Promise<{ success: boolean; output: string }> {

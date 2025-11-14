@@ -1,0 +1,38 @@
+# Source files (only publish dist/)
+src/
+
+# Test files
+test_llm_logs/
+prompt_logs/
+*.test.ts
+*.test.js
+
+# Development files
+tsconfig.json
+.env
+.env.*
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Git files
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+temp/
+tmp/
+test-*/
+*-output/
+
+# Node modules
+node_modules/
+

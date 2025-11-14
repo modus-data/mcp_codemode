@@ -1,17 +1,68 @@
 {
-  "name": "mcp_codemode",
+  "name": "@modus-data/mcp-codemode",
   "version": "1.0.0",
   "description": "An agnostic implementation fit for sandbox environments for the MCP codemode concept",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
-    "example:generate": "npm run build && node dist/example-generate-code.js"
+    "example:generate": "npm run build && node dist/example-generate-code.js",
+    "prepublishOnly": "npm run build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./model_clients": {
+      "types": "./dist/model_clients/index.d.ts",
+      "default": "./dist/model_clients/index.js"
+    },
+    "./run_environments": {
+      "types": "./dist/run_environments/index.d.ts",
+      "default": "./dist/run_environments/index.js"
+    },
+    "./mcp_providers": {
+      "types": "./dist/mcp_providers/index.d.ts",
+      "default": "./dist/mcp_providers/index.js"
+    },
+    "./steps": {
+      "types": "./dist/steps/index.d.ts",
+      "default": "./dist/steps/index.js"
+    }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "code-mode",
+    "llm",
+    "ai",
+    "agent",
+    "typescript",
+    "sandbox",
+    "code-execution",
+    "tool-calling"
+  ],
+  "author": "Modus Data",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modus-data/mcp_codemode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/modus-data/mcp_codemode/issues"
+  },
+  "homepage": "https://github.com/modus-data/mcp_codemode#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.6.0"
