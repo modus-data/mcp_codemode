@@ -242,7 +242,7 @@ This is a completely free and open-to-collaboration repository. Contributions ar
 
 ## License
 
-[License information to be added]
+Apache 2.0
 
 ## Learn More
 
