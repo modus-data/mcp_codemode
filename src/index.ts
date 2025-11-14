@@ -54,12 +54,13 @@ async function main() {
     },
     tools: await composioProvider.getTools({ toolkits: ['slack', 'gmail'] }),
     runEnvironment: new LocalRunEnvironment('./tmp/'),
+    // logPath: './prompt_logs', // Optional: logs all LLM prompts and responses
   });
 
   try {
     const result: MCPExecutionResult = await codeModeMCP.runMCPCode({
     //   query: "get all channels from slack, and send a message to every channel that start with 'test', set an emoji on each message in channels that start with the letter 'e'",
-      query: "send 'hi private channel' to every private channel in slack",
+      query: "send hello world to every channel in slack",
       maxToolCalls: 100,
       totalExecutionTimeout: 60,
       toolCallTimeout: 10,

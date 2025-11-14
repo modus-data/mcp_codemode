@@ -16,3 +16,5 @@ src/**/*.d.ts
 src/**/*.js.map
 src/**/*.d.ts.map
 
+prompt_logs/
+

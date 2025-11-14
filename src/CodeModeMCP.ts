@@ -3,6 +3,8 @@ import { IMCPProvider, MCPTool, ToolCatalog } from './mcp_providers/types';
 import { IRunEnvironment } from './run_environments/types';
 import { getToolByPath, listAllToolPaths } from './mcp_providers/utils';
 import { generatePseudocode, filterToolsForQuery, generateToolsCode, implementCode, executeCode } from './steps';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Configuration for the CodeModeMCP class
@@ -45,6 +47,13 @@ export interface CodeModeMCPConfig {
    * Optional run environment for executing code
    */
   runEnvironment?: IRunEnvironment;
+  
+  /**
+   * Optional path to log all LLM prompts and responses
+   * Logs will be organized in folders per use case (tinyLLM, mainLLM, strategyLLM)
+   * with timestamps in file names
+   */
+  logPath?: string;
 }
 
 /**
@@ -136,6 +145,81 @@ export interface MCPExecutionResult {
 }
 
 /**
+ * Create a short timestamp string for filenames
+ */
+function createShortTimestamp(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const second = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  
+  return `${year}${month}${day}_${hour}${minute}${second}_${ms}`;
+}
+
+/**
+ * Wrap an LLM function with logging capabilities
+ */
+function wrapLLMWithLogging(
+  llmFunction: LLMFunction,
+  logPath: string,
+  useCaseName: string
+): LLMFunction {
+  let callCounter = 0;
+  
+  return async (prompt: string): Promise<string> => {
+    callCounter++;
+    const timestamp = createShortTimestamp();
+    const useCaseDir = path.join(logPath, useCaseName);
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(useCaseDir)) {
+      fs.mkdirSync(useCaseDir, { recursive: true });
+    }
+    
+    // Create filenames with timestamp and counter
+    const baseFilename = `${timestamp}_call${callCounter}`;
+    const promptFile = path.join(useCaseDir, `${baseFilename}_prompt.txt`);
+    const responseFile = path.join(useCaseDir, `${baseFilename}_response.txt`);
+    
+    // Log the prompt
+    try {
+      fs.writeFileSync(promptFile, prompt, 'utf-8');
+    } catch (error) {
+      console.error(`Failed to log prompt to ${promptFile}:`, error);
+    }
+    
+    // Call the original LLM function
+    let response: string = '';
+    
+    try {
+      response = await llmFunction(prompt);
+      
+      // Log the response
+      try {
+        fs.writeFileSync(responseFile, response, 'utf-8');
+      } catch (logError) {
+        console.error(`Failed to log response to ${responseFile}:`, logError);
+      }
+    } catch (e) {
+      // Log the error
+      const errorMessage = `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+      try {
+        fs.writeFileSync(responseFile, errorMessage, 'utf-8');
+      } catch (logError) {
+        console.error(`Failed to log error to ${responseFile}:`, logError);
+      }
+      throw e; // Re-throw after logging
+    }
+    
+    return response;
+  };
+}
+
+/**
  * CodeModeMCP - Main class for orchestrating LLM-powered MCP tool execution
  * 
  * This class coordinates three different LLM models with different specializations:
@@ -150,11 +234,22 @@ export class CodeModeMCP {
   private tools: ToolCatalog;
   private mcpProvider?: IMCPProvider;
   private runEnvironment?: IRunEnvironment;
+  private logPath?: string;
 
   constructor(config: CodeModeMCPConfig) {
-    this.tinyLLM = config.llms.tinyLLM;
-    this.mainLLM = config.llms.mainLLM;
-    this.strategyLLM = config.llms.strategyLLM;
+    this.logPath = config.logPath;
+    
+    // Wrap LLM functions with logging if logPath is provided
+    if (config.logPath) {
+      this.tinyLLM = wrapLLMWithLogging(config.llms.tinyLLM, config.logPath, 'tinyLLM');
+      this.mainLLM = wrapLLMWithLogging(config.llms.mainLLM, config.logPath, 'mainLLM');
+      this.strategyLLM = wrapLLMWithLogging(config.llms.strategyLLM, config.logPath, 'strategyLLM');
+    } else {
+      this.tinyLLM = config.llms.tinyLLM;
+      this.mainLLM = config.llms.mainLLM;
+      this.strategyLLM = config.llms.strategyLLM;
+    }
+    
     this.tools = config.tools || {};
     this.mcpProvider = config.mcpProvider;
     this.runEnvironment = config.runEnvironment;
