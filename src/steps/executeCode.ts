@@ -173,8 +173,11 @@ async function executeInProcess(code: string, toolFunctions: Record<string, Func
   let processedCode = code;
   
   // Remove the main() execution at the end (main().then(...).catch(...))
-  processedCode = processedCode.replace(/main\s*\(\s*\)\s*\.then\([^)]+\)\s*\.catch\([^)]+\);?\s*$/s, '');
-  processedCode = processedCode.replace(/main\s*\(\s*\)\s*\.then\([^)]+\);?\s*$/s, '');
+  // Use a more robust pattern that handles nested parentheses by matching to the end
+  processedCode = processedCode.replace(/main\s*\(\s*\)\s*\.then\([\s\S]*?\)\s*\.catch\([\s\S]*?\);?\s*$/s, '');
+  processedCode = processedCode.replace(/main\s*\(\s*\)\s*\.then\([\s\S]*?\);?\s*$/s, '');
+  // Also handle cases where main() is called without then/catch
+  processedCode = processedCode.replace(/main\s*\(\s*\)\s*;?\s*$/s, '');
   
   const wrappedCode = `
     const { ${contextVars} } = toolFunctions;
