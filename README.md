@@ -14,7 +14,7 @@ Traditional MCP (Model Context Protocol) usage exposes tools directly to LLMs, r
 
 1. **LLMs excel at writing code**: They've been trained on millions of real-world TypeScript examples, but only synthetic tool-calling examples
 2. **Handle more complex tools**: When tools are presented as TypeScript APIs, LLMs can work with larger and more sophisticated tool sets
-3. **Efficient multi-step operations**: Instead of feeding each tool result back through the neural network, LLMs can write code that chains multiple calls together
+3. **Efficient multi-step operations**: Instead of feeding each tool result back through the LLM context, LLMs can write code that chains multiple calls together
 4. **Better reasoning**: Writing code is a more natural problem-solving mode for LLMs than structured tool invocations
 
 ## How It Works
