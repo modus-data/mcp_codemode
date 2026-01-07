@@ -194,11 +194,11 @@ async function executeInProcess(code: string, toolFunctions: Record<string, Func
 /**
  * Convert a tool path to a function name
  * e.g., "slack.chat.post_message" -> "SLACK_CHAT_POST_MESSAGE"
+ * e.g., "slack.add.emoji-reaction" -> "SLACK_ADD_EMOJI_REACTION"
  */
 function pathToFunctionName(toolPath: string): string {
   return toolPath
-    .split('.')
-    .join('_')
+    .replace(/[.\-]/g, '_')  // Replace both dots and hyphens with underscores
     .toUpperCase();
 }
 

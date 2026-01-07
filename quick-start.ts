@@ -1,6 +1,6 @@
 import { CodeModeMCP } from './src/CodeModeMCP';
 import { OpenRouterClient } from './src/model_clients';
-import { ComposioProvider } from './src/mcp_providers';
+import { PipedreamProvider } from './src/mcp_providers';
 import { E2BRunEnvironment } from './src/run_environments';
 import * as dotenv from 'dotenv';
 
@@ -13,7 +13,9 @@ dotenv.config();
 function checkEnvironmentVariables(): void {
   const requiredVars = [
     { name: 'OPENROUTER_API_KEY', description: 'Get your API key from: https://openrouter.ai/keys' },
-    { name: 'COMPOSIO_API_KEY', description: 'Get your API key from: https://app.composio.dev/settings/api-keys' },
+    { name: 'PIPEDREAM_CLIENT_ID', description: 'Get from: https://pipedream.com/projects → Project Settings → OAuth Credentials' },
+    { name: 'PIPEDREAM_CLIENT_SECRET', description: 'Get from: https://pipedream.com/projects → Project Settings → OAuth Credentials' },
+    { name: 'PIPEDREAM_PROJECT_ID', description: 'Get from: https://pipedream.com/projects (format: proj_xxxxx)' },
     { name: 'E2B_API_KEY', description: 'Get your API key from: https://e2b.dev/docs/getting-started/api-key' },
   ];
 
@@ -49,10 +51,8 @@ async function main() {
   // Initialize OpenRouter client for LLM access
   const openRouterClient = new OpenRouterClient();
 
-  // Setup Composio with your project
-  const composioProvider = new ComposioProvider({
-    projectId: 'your-project-id', // Optional: configure with connectedAccountId and userId
-  });
+  // Setup Pipedream provider
+  const pipedreamProvider = new PipedreamProvider();
 
   // Configure with three specialized LLMs
   const codeMode = new CodeModeMCP({
@@ -61,8 +61,10 @@ async function main() {
       mainLLM: openRouterClient.getLLM('openai/gpt-oss-120b'),     // Code generation model
       strategyLLM: openRouterClient.getLLM('anthropic/claude-sonnet-4.5')  // Strategic planning
     },
-    tools: await composioProvider.getTools({ 
-      toolkits: ['slack', 'gmail', 'github'] // Specify the toolkits you need
+    // Pass app names to fetch all actions for those apps
+    // You can also pass specific action keys like 'slack_bot-send-message'
+    tools: await pipedreamProvider.getTools({ 
+      toolkits: ['slack', 'gmail', 'github'] // App names - will fetch all actions for each
     }),
     runEnvironment: new E2BRunEnvironment(), // Secure cloud sandbox
     logPath: './prompt_logs' // Optional: log all LLM interactions

@@ -106,12 +106,13 @@ export async function generateToolsCode(
     toolInterfaces.set(toolPath, interfaceCode);
     
     // Add tool path and name as a comment, then the interface
+    const functionName = toValidIdentifier(tool.name);
     interfacesCode += `// Tool: ${toolPath}\n`;
-    interfacesCode += `// Function name: ${tool.name}\n`;
+    interfacesCode += `// Function name: ${functionName}\n`;
     interfacesCode += interfaceCode;
     interfacesCode += '\n\n';
     
-    console.log(`   ✅ Generated interface: ${toolPath} -> ${tool.name}()`);
+    console.log(`   ✅ Generated interface: ${toolPath} -> ${toValidIdentifier(tool.name)}()`);
   }
   
   console.log(`\n   📦 Summary:`);
@@ -167,8 +168,8 @@ function generateToolInterfaceCode(tool: MCPTool, toolPath: string): string {
     newLine: ts.NewLineKind.LineFeed,
   });
   
-  // Create parameter type interface
-  const interfaceName = `${capitalize(tool.name)}Params`;
+  // Create parameter type interface using valid TypeScript identifier
+  const interfaceName = `${toValidIdentifier(tool.name)}Params`;
   const interfaceMembers = tool.parameters.map(param => 
     ts.factory.createPropertySignature(
       undefined,
@@ -195,10 +196,12 @@ function generateToolInterfaceCode(tool: MCPTool, toolPath: string): string {
     ` * @param ${param.name} ${param.description} (${param.type}${param.required ? ', required' : ', optional'})`
   ).join('\n');
   
+  // Use valid identifier format in JSDoc
+  const validFunctionName = toValidIdentifier(tool.name);
   const interfaceWithComment = ts.addSyntheticLeadingComment(
     paramInterface,
     ts.SyntaxKind.MultiLineCommentTrivia,
-    `*\n * Parameters for ${tool.name}\n * ${tool.description}\n *\n${paramsDoc}\n `,
+    `*\n * Parameters for ${validFunctionName}\n * ${tool.description}\n *\n${paramsDoc}\n `,
     true
   );
   
@@ -229,8 +232,8 @@ function generateToolFunctionCode(tool: MCPTool): string {
     newLine: ts.NewLineKind.LineFeed,
   });
   
-  // Create parameter type interface
-  const interfaceName = `${capitalize(tool.name)}Params`;
+  // Create parameter type interface using valid TypeScript identifier
+  const interfaceName = `${toValidIdentifier(tool.name)}Params`;
   const interfaceMembers = tool.parameters.map(param => 
     ts.factory.createPropertySignature(
       undefined,
@@ -253,10 +256,11 @@ function generateToolFunctionCode(tool: MCPTool): string {
   );
   
   // Add JSDoc comment to interface
+  const validFunctionName = toValidIdentifier(tool.name);
   const interfaceWithComment = ts.addSyntheticLeadingComment(
     paramInterface,
     ts.SyntaxKind.MultiLineCommentTrivia,
-    `*\n * Parameters for ${tool.name}\n * ${tool.description}\n `,
+    `*\n * Parameters for ${validFunctionName}\n * ${tool.description}\n `,
     true
   );
   
@@ -278,7 +282,7 @@ function generateToolFunctionCode(tool: MCPTool): string {
       ts.factory.createModifier(ts.SyntaxKind.AsyncKeyword)
     ],
     undefined,
-    ts.factory.createIdentifier(tool.name),
+    ts.factory.createIdentifier(toValidIdentifier(tool.name)),
     undefined,
     functionParams,
     ts.factory.createTypeReferenceNode(
@@ -357,6 +361,17 @@ function mapTypeStringToTSType(typeString: string): string {
  */
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Convert a tool name to a valid TypeScript identifier in SCREAMING_SNAKE_CASE
+ * e.g. "slack-add-emoji-reaction" -> "SLACK_ADD_EMOJI_REACTION"
+ */
+function toValidIdentifier(str: string): string {
+  return str
+    .replace(/-/g, '_')  // Replace hyphens with underscores
+    .replace(/[^a-zA-Z0-9_]/g, '_')  // Replace any other invalid chars with underscore
+    .toUpperCase();
 }
 
 /**

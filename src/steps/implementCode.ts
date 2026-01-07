@@ -82,7 +82,9 @@ export async function implementCode(
   const prompt = createImplementationPrompt(query, pseudocode, interfacesCode);
   
   // Get implementation from mainLLM
-  console.log(`   🔄 Calling mainLLM...`);
+  console.log(`   🔄 Calling mainLLM... prommpt:`);
+  console.log(prompt);
+  console.log(`   🔄 Calling mainLLM... prompt end`);
   const implementationCode = await llmFunction(prompt);
   console.log(`   ✅ Received implementation (${implementationCode.length} characters)`);
   
@@ -137,77 +139,17 @@ ${interfacesCode}
 YOUR TASK:
 Generate a complete, self-contained TypeScript program that follows the strategic plan.
 
-CRITICAL: The tool functions are ALREADY IMPLEMENTED and will be available at runtime.
-Each tool function is named with uppercase and underscores matching the tool path.
-
-For example:
-- Tool path: slack.list.all_channels → Function name: SLACK_LIST_ALL_CHANNELS
-- Tool path: slack.chat.post_message → Function name: SLACK_CHAT_POST_MESSAGE
-- Tool path: slack.add.reaction_to_an_item → Function name: SLACK_ADD_REACTION_TO_AN_ITEM
-
-IMPORTANT - Response Structure:
-Tool responses follow this structure:
-{
-  data: { /* actual response data here */ },
-  successful: boolean,
-  error: any,
-  log_id: string
-}
-
-For example, SLACK_LIST_ALL_CHANNELS returns:
-{
-  data: {
-    channels: [...],
-    ok: true,
-    response_metadata: { next_cursor: '...' }
-  },
-  successful: true,
-  error: null
-}
-
-So to access channels, use: response.data.channels (NOT response.channels)
-
-IMPORTANT STRUCTURE REQUIREMENTS:
-
-1. Implement a main() function that:
-   - Follows the strategic plan step by step
-   - CALLS the provided tool functions (they're already implemented - don't create them!)
-   - Use the function names in UPPERCASE_WITH_UNDERSCORES format
-   - Pass parameters using the Params interfaces provided
-   - Includes proper error handling (try/catch)
-   - Logs progress to console
-   - Returns a meaningful result object
-   
-   Example:
-     async function main() {
-       try {
-         // Call the already-implemented tool function
-         const result = await SLACK_LIST_ALL_CHANNELS({ limit: 100 });
-         const channels = result.channels;
-         
-         for (const channel of channels) {
-           await SLACK_CHAT_POST_MESSAGE({
-             channel: channel.id,
-             markdown_text: 'Hello!'
-           });
-         }
-         
-         return { success: true };
-       } catch (error) {
-         console.error('Error:', error);
-         return { success: false, error };
-       }
-     }
-
-2. Finally, add code to execute main():
-   main()
-     .then(result => console.log('Result:', result))
-     .catch(error => console.error('Error:', error));
+CRITICAL CONSTRAINTS:
+1. You can ONLY use the tool functions whose interfaces are defined above - NO OTHER FUNCTIONS EXIST!
+2. The tool functions are ALREADY IMPLEMENTED and will be available at runtime.
+3. Each tool function is named EXACTLY as shown in the "Function name:" comment (e.g., SLACK_LIST_CHANNELS).
+4. If the strategic plan references a tool that has no interface above, you MUST skip that step or find an alternative using ONLY the available tools.
 
 REQUIREMENTS:
 - Do NOT import anything - this is a self-contained program
 - Do NOT repeat the interface definitions (they're already provided above)
 - Do NOT implement the tool functions - they are already available!
+- Do NOT invent or hallucinate functions that don't have interfaces defined above!
 - Use async/await for all asynchronous operations
 - Include descriptive console.log statements for debugging
 - Handle all errors gracefully with try/catch
